@@ -46,7 +46,10 @@ const isValid = function (value) {
 
 const baseUrl='http://localhost:4000'
 const createUrl=async function(req,res){
-    try{
+  try{
+    if(Object.keys(req.query).length>0){
+        return res.status(400).send({status:false,message:"Filtering not allowed"})
+    }    
 
     let body=req.body  
     if(!isValidRequestBody(body)){
@@ -58,15 +61,28 @@ const createUrl=async function(req,res){
         return res.status(400).send({status:false,message:"Please provide longUrl"})
     }
     
-    longUrl.toLowerCase().trim()
-    if(!validUrl.isUri(longUrl)){
+   
+    let correctUrl=longUrl.toLowerCase().trim()
+    
+    if(!validUrl.isUri(correctUrl)){
         return res.status(400).send({status:false,message:"Invalid longUrl"})
+    }
+    let uniqueLongUrl=await urlModel.findOne({longUrl:correctUrl})
+    console.log(uniqueLongUrl)
+    if(uniqueLongUrl){
+        let {urlCode}=uniqueLongUrl
+        console.log(urlCode)
+        let getdata=await GET_ASYNC(`${urlCode}`)
+        console.log(getdata)
+        return res.status(200).send({status:true,data:JSON.parse(getdata)})
     }
     
     if(!validUrl.isUri(baseUrl)){
         return res.status(400).send({status:false,message:"Invalid base URL"})
     }
-    const urlCode=shortid.generate()
+    const urlCode=shortid.generate() //generate unique id for url
+    
+    let newUrl=urlCode.toLowerCase() 
     
     
     const uniqueUrlCode=await urlModel.findOne({urlCode:urlCode})
@@ -80,8 +96,11 @@ const createUrl=async function(req,res){
         return res.status(400).send({status:false,message:"Short Url is already registered"})
     }
     body.shortUrl=shortUrl
-    body.urlCode=urlCode
-    await SET_ASYNC(`${urlCode}`,longUrl)
+    body.urlCode=newUrl
+
+    
+    let setdata=await SET_ASYNC(`${body.urlCode}`,JSON.stringify(body))
+    
     let data=await urlModel.create(body)
     return res.status(201).send({status:true,message:"created Successfully",data:data})
 
@@ -94,14 +113,26 @@ const createUrl=async function(req,res){
 
 const getUrl=async function(req,res){
     try{
+        let {urlCode}=req.params 
+        let verifyUrl=shortid.isValid(urlCode)
+        if(!verifyUrl){
+            return res.status(400).send({status:false,message:"Not a valid url code"})
+        }
         if(Object.keys(req.query).length>0){
             return res.status(400).send({status:false,message:"Filtering not allowed"})
         }
+
     
-        let {urlCode}=req.params 
+        
         let cachedData=await GET_ASYNC(`${urlCode}`)
+        
         if(cachedData){
-            return res.status(302).redirect(cachedData)
+            let newData=JSON.parse(cachedData)
+            
+            let longUrl=newData.longUrl 
+            console.log(1)
+        
+            return res.status(302).redirect(longUrl)
         }
         let url =await urlModel.findOne({urlCode:urlCode})
         console.log(url)
@@ -111,7 +142,9 @@ const getUrl=async function(req,res){
             return res.status(404).send({status:false,message:"urlCode not found"})
         }
         else{
+            // await SET_ASYNC(`${urlCode}`,JSON.stringify(url.longUrl))
             return res.status(302).redirect(url.longUrl)
+            
         }
 
     }
