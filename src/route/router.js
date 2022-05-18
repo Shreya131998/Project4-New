@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const {createUrl}=require("../controller/url")
-const {getUrl}=require("../controller/redirect")
+const {createUrl,getUrl}=require("../controller/url")
+
 
 router.post("/url/shorten",createUrl)
 router.get("/:urlCode",getUrl)
