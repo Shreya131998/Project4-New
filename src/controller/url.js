@@ -67,14 +67,19 @@ const createUrl=async function(req,res){
     if(!validUrl.isUri(correctUrl)){
         return res.status(400).send({status:false,message:"Invalid longUrl"})
     }
-    let uniqueLongUrl=await urlModel.findOne({longUrl:correctUrl})
-    console.log(uniqueLongUrl)
-    if(uniqueLongUrl){
-        let {urlCode}=uniqueLongUrl
-        console.log(urlCode)
-        let getdata=await GET_ASYNC(`${urlCode}`)
-        console.log(getdata)
-        return res.status(200).send({status:true,data:JSON.parse(getdata)})
+    // let uniqueLongUrl=await urlModel.findOne({longUrl:correctUrl})
+    // console.log(uniqueLongUrl)
+    // if(uniqueLongUrl){
+    //     let {urlCode}=uniqueLongUrl
+    //     console.log(urlCode)
+    //     let getdata=await GET_ASYNC(`${urlCode}`)
+    //     console.log(getdata)
+    //     return res.status(200).send({status:true,data:JSON.parse(getdata)})
+    // } 
+    let cachedData=await GET_ASYNC(`${longUrl}`)
+    if(cachedData){
+        
+        return res.status(200).send({status:true,data:JSON.parse(cachedData)})
     }
     
     if(!validUrl.isUri(baseUrl)){
@@ -99,9 +104,11 @@ const createUrl=async function(req,res){
     body.urlCode=newUrl
 
     
-    let setdata=await SET_ASYNC(`${body.urlCode}`,JSON.stringify(body))
+    
     
     let data=await urlModel.create(body)
+    await SET_ASYNC(`${longUrl}`,JSON.stringify(body))
+    await SET_ASYNC(`${body.urlCode}`,JSON.stringify(longUrl))
     return res.status(201).send({status:true,message:"created Successfully",data:data})
 
     }
@@ -127,12 +134,12 @@ const getUrl=async function(req,res){
         let cachedData=await GET_ASYNC(`${urlCode}`)
         
         if(cachedData){
-            let newData=JSON.parse(cachedData)
             
-            let longUrl=newData.longUrl 
+            
+             
             console.log(1)
         
-            return res.status(302).redirect(longUrl)
+            return res.status(302).redirect(JSON.parse(cachedData))
         }
         let url =await urlModel.findOne({urlCode:urlCode})
         console.log(url)
@@ -142,7 +149,7 @@ const getUrl=async function(req,res){
             return res.status(404).send({status:false,message:"urlCode not found"})
         }
         else{
-            // await SET_ASYNC(`${urlCode}`,JSON.stringify(url.longUrl))
+            await SET_ASYNC(`${urlCode}`,JSON.stringify(url.longUrl))
             return res.status(302).redirect(url.longUrl)
             
         }
