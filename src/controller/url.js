@@ -44,7 +44,7 @@ const isValid = function (value) {
   };
   
 
-const baseUrl='http://localhost:4000'
+const baseUrl='http://localhost:3000'
 const createUrl=async function(req,res){
   try{
     if(Object.keys(req.query).length>0){
@@ -63,18 +63,19 @@ const createUrl=async function(req,res){
     
    
     let correctUrl=longUrl.toLowerCase().trim()
+    console.log(correctUrl)
     
-    if(!validUrl.isUri(correctUrl)){
+    if(!validUrl.isWebUri(correctUrl)){
         return res.status(400).send({status:false,message:"Invalid longUrl"})
     }
     
-    let cachedData=await GET_ASYNC(`${longUrl}`)
+    let cachedData=await GET_ASYNC(`${correctUrl}`)
     if(cachedData){
         
         return res.status(200).send({status:true,data:JSON.parse(cachedData)})
     }
     
-    if(!validUrl.isUri(baseUrl)){
+    if(!validUrl.isWebUri(baseUrl)){
         return res.status(400).send({status:false,message:"Invalid base URL"})
     }
     const urlCode=shortid.generate() //generate unique id for url
@@ -92,15 +93,16 @@ const createUrl=async function(req,res){
     if(validShortUrl){
         return res.status(400).send({status:false,message:"Short Url is already registered"})
     }
+    body.longUrl=correctUrl
     body.shortUrl=shortUrl
     body.urlCode=newUrl
 
     
     
     
-    let data=await urlModel.create(body)
-    await SET_ASYNC(`${longUrl}`,JSON.stringify(body))
-    await SET_ASYNC(`${newUrl}`,JSON.stringify(longUrl))
+    await urlModel.create(body)
+    await SET_ASYNC(`${correctUrl}`,JSON.stringify(body))
+    await SET_ASYNC(`${newUrl}`,JSON.stringify(correctUrl))
     let data1=await urlModel.findOne({longUrl:longUrl,shortUrl:shortUrl,urlCode:newUrl}).select({_id:0,__v:0})
     return res.status(201).send({status:true,message:"created Successfully",data:data1})
 
