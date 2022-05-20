@@ -74,6 +74,13 @@ const createUrl=async function(req,res){
         
         return res.status(200).send({status:true,data:JSON.parse(cachedData)})
     }
+    let dbdata=await urlModel.findOne({longUrl:correctUrl}).select({_id:0,__v:0})
+    console.log(dbdata)
+    if(dbdata){
+        await SET_ASYNC(`${correctUrl}`,JSON.stringify(dbdata))
+        await SET_ASYNC(`${dbdata.urlCode}`,JSON.stringify(correctUrl))
+        return res.status(200).send({status:true,data:dbdata})
+    }
     
     if(!validUrl.isWebUri(baseUrl)){
         return res.status(400).send({status:false,message:"Invalid base URL"})
@@ -101,8 +108,8 @@ const createUrl=async function(req,res){
     
     
     await urlModel.create(body)
-    await SET_ASYNC(`${correctUrl}`,JSON.stringify(body))
-    await SET_ASYNC(`${newUrl}`,JSON.stringify(correctUrl))
+     await SET_ASYNC(`${correctUrl}`,JSON.stringify(body))
+     await SET_ASYNC(`${newUrl}`,JSON.stringify(correctUrl))
     let data1=await urlModel.findOne({longUrl:longUrl,shortUrl:shortUrl,urlCode:newUrl}).select({_id:0,__v:0})
     return res.status(201).send({status:true,message:"created Successfully",data:data1})
 
