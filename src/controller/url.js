@@ -110,7 +110,7 @@ const createUrl=async function(req,res){
     await urlModel.create(body)
      await SET_ASYNC(`${correctUrl}`,JSON.stringify(body))
      await SET_ASYNC(`${newUrl}`,JSON.stringify(correctUrl))
-    let data1=await urlModel.findOne({longUrl:longUrl,shortUrl:shortUrl,urlCode:newUrl}).select({_id:0,__v:0})
+    let data1=await urlModel.findOne({longUrl:correctUrl,shortUrl:shortUrl,urlCode:newUrl}).select({_id:0,__v:0})
     return res.status(201).send({status:true,message:"created Successfully",data:data1})
 
     }
