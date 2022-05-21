@@ -62,7 +62,7 @@ const createUrl=async function(req,res){
     }
     
    
-    let correctUrl=longUrl.toLowerCase().trim()
+    let correctUrl=longUrl.trim()
     console.log(correctUrl)
     
     if(!validUrl.isWebUri(correctUrl)){
@@ -90,7 +90,7 @@ const createUrl=async function(req,res){
     let newUrl=urlCode.toLowerCase() 
     
     
-    const uniqueUrlCode=await urlModel.findOne({urlCode:urlCode})
+    const uniqueUrlCode=await urlModel.findOne({urlCode:newUrl})
     if(uniqueUrlCode){
         return res.status(400).send({status:false,message:"urlCode already registered"})
     }
